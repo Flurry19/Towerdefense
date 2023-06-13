@@ -1,32 +1,27 @@
-import { Actor, Vector, Engine, CollisionType, Shape } from "excalibur"
+import { Actor, Vector, Engine, CollisionType, Shape, Timer } from "excalibur"
 import { Resources } from "./resources"
-
-// Collision with 
-export class Puppypen extends Actor {
-    constructor() {
-        super({
-            collisionType: CollisionType.Fixed,
-            collider: Shape.Box(300, 300)
-        })
-    }
-
-    onInitialize(engine) {
-        this.scale = new Vector(0.3, 0.3)
-        this.pos = new Vector(1200, 476)
-        this.graphics.use(Resources.Puppypen.toSprite())
-
-    }
+import { Bullet } from "./projectile"
+import { Attacker } from "./attacker"
 
 
-}
 
 export class Tower extends Actor {
 
+    bulletType = Bullet
+    timer = 0
+
+
     constructor() {
-        super({
-            // collisionType: CollisionType.Active,
-            // collider: Shape.Box(5000, 5000)
-        })
+        super();
+        // this.pos = new Vector(Tower.pos.x, Tower.pos.y)
+        this.projectiles = [
+            new Bullet({
+                position: {
+                    x: this.position.x,
+                    y: this.position.y
+                }
+            })
+        ]
     }
 
 
@@ -37,6 +32,13 @@ export class Tower extends Actor {
         this.range = 100
         this.damage = 1
         this.cost = 100
+        this.timer = new Timer({
+            // fcn: () => this.spawn(engine),
+            interval: 100,
+            repeats: true
+        })
+        engine.currentScene.add(this.timer)
+        this.timer.start()
 
 
         // Set the image of the tower
@@ -44,3 +46,4 @@ export class Tower extends Actor {
 
     }
 }
+

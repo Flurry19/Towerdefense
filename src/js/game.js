@@ -2,8 +2,10 @@ import '../css/style.css'
 import { Actor, Engine, Vector, Label, FontUnit, Font, StandardClock, CollisionGroupManager } from "excalibur"
 import { Resources, ResourceLoader } from './resources.js'
 import { Level } from './level1'
-import { Attacker, Fastattacker, Strongattacker } from './attacker'
-import { Puppypen, Tower } from './tower'
+import { Attacker } from './attacker'
+import { Tower } from './tower'
+import { Bullet } from "./projectile";
+import { Puppypen } from "./puppypen";
 
 export class Game extends Engine {
 
@@ -14,7 +16,7 @@ export class Game extends Engine {
     constructor() {
         // Set window
         super({ width: window.innerWidth, height: window.innerHeight })
-        this.showDebug(true)
+        // this.showDebug(true)
         this.start(ResourceLoader).then(() => this.startGame())
     }
 
@@ -62,22 +64,14 @@ export class Game extends Engine {
         })
         this.add(this.money)
 
-        // Make collision groups so attackers can't collide with eachother
-        // const attackerGroup = CollisionGroupManager.create('attacker')
-        // const defenderGroup = CollisionGroupManager.create('tower')
-
-        // const attackerGroupCanCollideWith = attackerGroup.CollisionGroup.collidesWith([
-        //     defenderGroup
-        // ])
-
         // Add an attacker 
-        const attacker = new Attacker()
+        const attacker = new Attacker(5, 500, new Vector(0.2, 0.2))
         this.add(attacker)
 
-        const fastattacker = new Fastattacker()
+        const fastattacker = new Attacker(2, 1000, new Vector(0.1, 0.1))
         this.add(fastattacker)
 
-        const strongattacker = new Strongattacker()
+        const strongattacker = new Attacker(10, 100, new Vector(0.3, 0.3))
         this.add(strongattacker)
 
         //Add a hardcoded tower
@@ -87,34 +81,35 @@ export class Game extends Engine {
 
         const puppypen = new Puppypen()
         this.add(puppypen)
+    }
 
-
-
-        // Lose a life when the attacker passes the whole path and bumps into puppy pen
-        attacker.on("collisionstart", (event) => {
-            this.hearts -= 2
-            attacker.kill()
-            this.label.text = `Lives: ${this.hearts}`
-        })
-        fastattacker.on("collisionstart", (event) => {
-            this.hearts--
-            fastattacker.kill()
-            this.label.text = `Lives: ${this.hearts}`
-        })
-        strongattacker.on("collisionstart", (event) => {
-            this.hearts -= 5
-            strongattacker.kill()
-            this.label.text = `Lives: ${this.hearts}`
-        })
-
-
-
-
-    } onInitialize(Engine) {
-
+    onInitialize(engine) {
+        engine.on('postupdate', () => {
+            engine.currentScene.actors.forEach(actor => {
+                if (actor instanceof Bullet) {
+                    // Check collision between the bullet and attackers
+                    engine.currentScene.actors.filter(a => a instanceof Attacker).forEach(attacker => {
+                        if (actor.collides(attacker)) {
+                            attacker.damage(actor.damage); // Call the 'damage' method on the attacker with the bullet's damage
+                            actor.kill();
+                        }
+                    });
+                }
+            });
+        });
 
     }
 
+    decreaseLives(lives) {
+        this.hearts -= lives
+        this.label.text = `Lives: ${this.hearts}`
+    }
+
+    animate() {
+        Tower.Bullet.forEach(Bullet => {
+            Bullet.draw()
+        })
+    }
     onPreUpdate(Engine) {
         if (this.hearts <= 0) {
             this.gameover = new Label({
